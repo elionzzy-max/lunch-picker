@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>今天吃啥</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -157,6 +162,9 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
 .tabbar button[aria-current="page"] svg{stroke-width:2.2}
 .tabbar button:hover{background:var(--sunken)}
 </style>
+<style>:root{padding-top:env(safe-area-inset-top,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
 
 <div class="wrap">
   <!-- 推荐 -->
@@ -554,3 +562,5 @@ try { const t = localStorage.getItem(KEY + '-tab'); if (['ask','week','lib'].inc
 
 refreshAll(); pick(); showTab(startTab);
 </script>
+</body>
+</html>
