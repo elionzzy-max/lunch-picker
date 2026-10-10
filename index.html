@@ -174,11 +174,11 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
     </header>
     <div class="ask">
       <div>
-        <div class="label" style="margin-bottom:8px">几个人吃 · 格子里是能去的餐厅数</div>
+        <div class="label" style="margin-bottom:8px" id="coverLabel">几个人吃 · 格子里是能去的餐厅数</div>
         <div class="cover" id="cover"></div>
       </div>
       <div>
-        <div class="label" style="margin-bottom:6px">口味筛选（不选 = 全部）</div>
+        <div class="label" style="margin-bottom:6px;display:flex;gap:8px;align-items:center">口味筛选（不选 = 全部）<button type="button" class="btn-sm btn-ghost" id="clearTags" hidden>清除筛选</button></div>
         <div class="chips" id="tagChips"></div>
       </div>
     </div>
@@ -345,6 +345,8 @@ function renderCover(){
 function allTags(){ return [...new Set(S.restaurants.flatMap(r => r.tags))]; }
 function renderTags(){
   for (const t of [...ask.tags]) if (!allTags().includes(t)) ask.tags.delete(t);
+  $('#clearTags').hidden = ask.tags.size === 0;
+  $('#coverLabel').textContent = ask.tags.size ? `几个人吃 · 只算「${[...ask.tags].join('、')}」口味的餐厅` : '几个人吃 · 格子里是能去的餐厅数';
   $('#tagChips').innerHTML = allTags().map(t => `<button type="button" class="chip ${ask.tags.has(t) ? 'on' : ''}" data-tag="${esc(t)}">${esc(t)}</button>`).join('');
 }
 function pick(){
@@ -357,7 +359,9 @@ function renderResult(animate){
   const n = ask.people, list = candidates(n), p = byId(ask.pickId);
   const el = $('#result');
   if (!list.length){
-    el.innerHTML = `<div class="empty warn">还没有适合 <b class="num">${n}</b> 人的餐厅${ask.tags.size ? '（在当前口味筛选下）' : ''}，去下面的餐厅库录入一家，或者把某家的人数范围调大。</div>`;
+    el.innerHTML = ask.tags.size
+      ? `<div class="empty warn">你选了「${[...ask.tags].map(esc).join('、')}」，这些口味里没有适合 <b class="num">${n}</b> 人的餐厅。<br><button type="button" class="btn-sm" data-clear-tags style="margin-top:8px">清除口味筛选</button></div>`
+      : `<div class="empty warn">还没有适合 <b class="num">${n}</b> 人的餐厅，去「餐厅库」录入一家，或者把某家的人数范围调大。</div>`;
     return;
   }
   if (!p || !fits(p, n) || !list.includes(p)){ ask.pickId = rand(list).id; return renderResult(animate); }
@@ -395,7 +399,10 @@ $('#tagChips').addEventListener('click', e => {
   const t = b.dataset.tag; ask.tags.has(t) ? ask.tags.delete(t) : ask.tags.add(t);
   renderTags(); renderCover(); pick();
 });
+function clearTags(){ ask.tags.clear(); renderTags(); renderCover(); pick(); }
+$('#clearTags').addEventListener('click', clearTags);
 $('#result').addEventListener('click', e => {
+  if (e.target.closest('[data-clear-tags]')) return clearTags();
   if (e.target.closest('#reroll')) return pick();
   const li = e.target.closest('[data-pick]');
   if (li){ ask.pickId = li.dataset.pick; return renderResult(true); }
