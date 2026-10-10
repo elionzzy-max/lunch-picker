@@ -240,6 +240,17 @@ const MAXP = 10;
 const DAYS = ['周一','周二','周三','周四','周五'];
 
 const uid = () => Math.random().toString(36).slice(2, 9);
+// 真实收藏的餐厅：人均待补，人数范围是估的，可在餐厅库里编辑
+const BUILTIN_VER = 1;
+function builtins(){
+  const B = (name, tags, min, max) => ({ id: uid(), name, tags, min, max, price: '' });
+  return [
+    B('颂合锦餐厅', ['特色菜'], 2, 10),
+    B('拾久（朝阳公园店）', ['烤鸭','京菜'], 2, 8),
+    B('疆爱巴扎', ['新疆菜'], 2, 10),
+    B('礁集·院里海·胶东味', ['鲁菜','海鲜'], 2, 10),
+  ];
+}
 function seed(){
   const R = (name, tags, min, max, price) => ({ id: uid(), name, tags, min, max, price, sample: true });
   return {
@@ -253,14 +264,21 @@ function seed(){
       R('太二酸菜鱼', ['川菜'], 2, 4, 80),
       R('湘菜小馆', ['湘菜','下饭'], 3, 8, 70),
       R('烤肉自助', ['烤肉'], 4, 10, 110),
-    ],
+    ].concat(builtins()),
     week: DAYS.map(() => ({ people: 2, rid: null, locked: false })),
+    builtinVer: BUILTIN_VER,
   };
 }
 function load(){ try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.restaurants && s.week) return s; } catch(e){} return null; }
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
 
 let S = load() || seed();
+// 老用户：把新加的收藏餐厅补进去（同名的不重复加）
+if ((S.builtinVer || 0) < BUILTIN_VER){
+  const have = new Set(S.restaurants.map(r => r.name));
+  S.restaurants.push(...builtins().filter(r => !have.has(r.name)));
+  S.builtinVer = BUILTIN_VER; save();
+}
 let ask = { people: 2, tags: new Set(), pickId: null, q: '' };
 let editingId = null;
 
