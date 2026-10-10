@@ -429,7 +429,7 @@ function renderResult(animate){
   el.innerHTML = `
     <div class="result">
       <div class="pick ${animate ? 'spin' : ''}">
-        <div class="q">${n == null ? '今天吃什么？（不限人数）' : `${n} 个人吃什么？`}</div>
+        <div class="q">筛选结果 <span class="num">${list.length}</span> 家</div>
         <div class="name">${esc(p.name)}</div>
         <div class="meta">
           ${isPaid(p) ? '<span class="pill paid">已充值</span>' : ''}
