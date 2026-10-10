@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
-/* 布局：单列工具页 —— 提问 → 结果 → 一周安排 → 餐厅库，宽屏时一周安排五列横排 */
+/* 布局：单列工具页 —— 推荐 / 一周安排 / 全部餐厅（只读），宽屏时一周安排五列横排 */
 :root{
   --bg:#F2F5F1; --surface:#FFFFFF; --sunken:#E8EDE7;
   --ink:#1B2420; --muted:#5D6B63; --line:#D8E0D9;
@@ -109,44 +109,15 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
 .lock{font-size:12px;padding:2px 8px;border-radius:6px}
 .lock.on{background:var(--mark-soft);border-color:var(--mark)}
 
-/* ---------- 餐厅库 ---------- */
-.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.card.editing{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.card-top > button{flex-shrink:0;white-space:nowrap}
-.card-top .nm{font-family:var(--f-display);font-weight:700;font-size:18px;line-height:1.3;min-width:0;overflow-wrap:anywhere}
-.card .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.card .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-.card .acts .grow{margin-right:auto}
-.field{display:flex;flex-direction:column;gap:4px;min-width:0}
-.fields2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.new-card{border-style:dashed;background:transparent}
-
-/* 双滑块 */
-.r2-wrap{display:flex;flex-direction:column;gap:2px}
-.r2-head{display:flex;justify-content:space-between;align-items:baseline}
-.r2-head .val{font-family:var(--f-num);font-weight:700;color:var(--accent)}
-.r2-head .lk{font-size:11px;color:var(--muted)}
-.r2{position:relative;height:28px}
-.r2-track{position:absolute;left:10px;right:10px;top:12px;height:4px;border-radius:2px;background:var(--sunken)}
-.r2-fill{position:absolute;top:0;bottom:0;background:var(--accent);border-radius:2px}
-.r2 input{position:absolute;left:0;top:0;width:100%;height:28px;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none}
-.r2 input::-webkit-slider-runnable-track{background:transparent;height:28px}
-.r2 input::-moz-range-track{background:transparent}
-.r2 input::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:20px;height:20px;margin-top:4px;border-radius:50%;background:var(--surface);border:3px solid var(--accent);cursor:grab}
-.r2 input::-moz-range-thumb{pointer-events:auto;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--accent);cursor:grab}
-.r2 input:focus-visible{outline:none}
-.r2 input:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--mark)}
-.r2.locked .r2-fill{background:var(--muted)}
-.r2.locked input::-webkit-slider-thumb{width:10px;height:10px;margin-top:9px;border:0;background:var(--muted);cursor:not-allowed}
-.r2.locked input::-moz-range-thumb{width:10px;height:10px;border:0;background:var(--muted);cursor:not-allowed}
-.r2-ticks{display:flex;justify-content:space-between;padding:0 6px;font-family:var(--f-num);font-size:10px;color:var(--muted)}
-.r2-ticks span{width:8px;text-align:center}
+/* ---------- 全部餐厅（只读列表） ---------- */
+.lib{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.lib li{display:flex;flex-direction:column;gap:6px;padding:12px 16px;border-top:1px solid var(--line);min-width:0}
+.lib li:first-child{border-top:0}
+.lib .nm{font-weight:700;font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+.lib .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.show{opacity:1}
-.foot{margin-top:12px;color:var(--muted);font-size:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media (max-width:480px){h1{font-size:28px}.pick .name{font-size:26px}.cover{grid-template-columns:repeat(5,1fr)}}
 
@@ -202,18 +173,13 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
     <div class="week" id="week"></div>
   </section>
 
-  <!-- 餐厅库 -->
+  <!-- 全部餐厅（只读） -->
   <section class="page" data-page="lib" hidden>
     <header class="page-head">
       <h1>餐厅库 <span class="num" id="libCount" style="color:var(--muted);font-size:16px;font-weight:500"></span></h1>
-      <p class="sub">点「编辑」才能改名字、口味、人均和人数范围，其余时候都锁着。</p>
+      <p class="sub">按距离从近到远排列。</p>
     </header>
-    <div class="lib" id="lib"></div>
-    <footer class="foot">
-      <span>数据只存在这台设备的浏览器里。</span>
-      <button type="button" class="btn-sm btn-ghost" id="resetBtn">恢复默认餐厅</button>
-      <span id="resetConfirm" hidden>确定清空你录入的内容，恢复成默认餐厅？<button type="button" class="btn-sm btn-danger" id="resetYes">恢复</button> <button type="button" class="btn-sm btn-ghost" id="resetNo">算了</button></span>
-    </footer>
+    <ul class="lib" id="lib"></ul>
   </section>
 </div>
 
@@ -239,7 +205,7 @@ const MAXP = 10;
 const DAYS = ['周一','周二','周三','周四','周五'];
 
 const uid = () => Math.random().toString(36).slice(2, 9);
-// 收藏的餐厅。人数范围是估的；价格、距离来自大众点评截图，可在餐厅库里编辑
+// 收藏的餐厅。价格、距离来自大众点评截图；页面只读，改数据就改这里
 // dist 单位米；go 为 walk / taxi，不填时按距离推算
 const BUILTIN_VER = 13;
 const YDG_DIST = 2000; // 颐堤港统一按 2km 打车
@@ -380,13 +346,11 @@ if ((S.builtinVer || 0) < BUILTIN_VER){
   S.builtinVer = BUILTIN_VER; save();
 }
 let ask = { people: 2, tags: new Set(), go: '', pickId: null };
-let editingId = null;
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const byId = id => S.restaurants.find(r => r.id === id);
 const fits = (r, n) => n >= r.min && n <= r.max;
-const pctOf = v => (v - 1) / (MAXP - 1) * 100;
 const rangeText = r => r.min === r.max ? `${r.min} 人` : `${r.min}–${r.max} 人`;
 const distText = m => m === '' || m == null ? '' : m < 1000 ? `${m}m` : `${+(m / 1000).toFixed(1)}km`;
 const goOf = r => r.go || (r.dist === '' || r.dist == null ? '' : r.dist < WALK_MAX ? 'walk' : 'taxi');
@@ -436,7 +400,7 @@ function renderResult(animate){
   if (!list.length){
     el.innerHTML = filterDesc()
       ? `<div class="empty warn">按「${esc(filterDesc())}」筛选后，没有${who}餐厅。<br><button type="button" class="btn-sm" data-clear-tags style="margin-top:8px">清除全部筛选</button></div>`
-      : `<div class="empty warn">还没有${who}餐厅，去「餐厅库」录入一家${n == null ? '' : '，或者把某家的人数范围调大'}。</div>`;
+      : `<div class="empty warn">目前没有${who}餐厅。</div>`;
     return;
   }
   if (!p || !list.includes(p)){ ask.pickId = rand(list).id; return renderResult(animate); }
@@ -561,133 +525,24 @@ $('#week').addEventListener('change', e => {
   save(); renderWeek();
 });
 
-/* ---------- 双滑块 ---------- */
-function rangeHTML(r, locked){
-  return `
-    <div class="r2-wrap">
-      <div class="r2-head"><span class="label">适合人数</span><span><span class="val" data-val>${rangeText(r)}</span>${locked ? ' <span class="lk">· 锁定</span>' : ''}</span></div>
-      <div class="r2 ${locked ? 'locked' : ''}">
-        <div class="r2-track"><div class="r2-fill" style="left:${pctOf(r.min)}%;right:${100 - pctOf(r.max)}%"></div></div>
-        <input type="range" id="lo-${r.id}" class="lo" min="1" max="${MAXP}" step="1" value="${r.min}" ${locked ? 'disabled' : ''} aria-label="最少人数">
-        <input type="range" id="hi-${r.id}" class="hi" min="1" max="${MAXP}" step="1" value="${r.max}" ${locked ? 'disabled' : ''} aria-label="最多人数">
-      </div>
-      <div class="r2-ticks">${Array.from({length: MAXP}, (_, i) => `<span>${i + 1}</span>`).join('')}</div>
-    </div>`;
-}
-function bindRange(root){
-  const lo = root.querySelector('.lo'), hi = root.querySelector('.hi');
-  if (!lo || lo.disabled) return;
-  const sync = src => {
-    let a = +lo.value, b = +hi.value;
-    if (a > b){ if (src === lo) hi.value = b = a; else lo.value = a = b; }
-    // 两个滑块叠在一起时，让刚拖动的那个在上层
-    lo.style.zIndex = src === lo ? 2 : 1; hi.style.zIndex = src === hi ? 2 : 1;
-    root.querySelector('.r2-fill').style.left = pctOf(a) + '%';
-    root.querySelector('.r2-fill').style.right = (100 - pctOf(b)) + '%';
-    root.querySelector('[data-val]').textContent = rangeText({min: a, max: b});
-  };
-  lo.addEventListener('input', () => sync(lo));
-  hi.addEventListener('input', () => sync(hi));
-}
-
-/* ---------- 餐厅库 ---------- */
-const NEW = { id: 'new', name: '', tags: [], min: 1, max: 4, price: '', dist: '', go: '' };
-function cardHTML(r){
-  const editing = editingId === r.id || r.id === 'new';
-  if (!editing){
-    return `
-      <div class="card" data-id="${r.id}">
-        <div class="card-top">
-          <div class="nm">${esc(r.name)}</div>
-          <button type="button" class="btn-sm" data-act="edit">编辑</button>
-        </div>
-        <div class="row">
-          ${r.price ? `<span class="pill num">人均 ¥${r.price}</span>` : ''}
-          ${tripText(r) ? `<span class="pill go-${goOf(r)}">${tripText(r)}</span>` : ''}
-          ${r.tags.map(t => `<span class="pill">${esc(t)}</span>`).join('')}
-        </div>
-        ${rangeHTML(r, true)}
-      </div>`;
-  }
-  const isNew = r.id === 'new';
-  return `
-    <div class="card editing ${isNew ? 'new-card' : ''}" data-id="${r.id}">
-      ${isNew ? '<div class="nm" style="font-family:var(--f-display);font-weight:700;font-size:17px">录入新餐厅</div>' : ''}
-      <label class="field"><span class="label">名字</span><input type="text" id="name-${r.id}" data-f="name" value="${esc(r.name)}" placeholder="比如：楼下麻辣烫"></label>
-      <div class="field"><span class="label">口味（可多选）</span>
-        <div class="chips">${CATS.map(c => `<button type="button" class="chip ${r.tags.includes(c) ? 'on' : ''}" data-cat="${c}" aria-pressed="${r.tags.includes(c)}">${c}</button>`).join('')}</div>
-      </div>
-      <div class="fields2">
-        <label class="field"><span class="label">人均 ¥</span><input type="number" id="price-${r.id}" data-f="price" min="0" value="${r.price ?? ''}" placeholder="50"></label>
-        <span></span>
-      </div>
-      <div class="fields2">
-        <label class="field"><span class="label">距离 km</span><input type="number" id="dist-${r.id}" data-f="dist" min="0" step="0.1" value="${r.dist === '' || r.dist == null ? '' : +(r.dist / 1000).toFixed(2)}" placeholder="1.2"></label>
-        <label class="field"><span class="label">怎么去 · 自动=不到 1km 步行</span><select id="go-${r.id}" data-f="go">
-          <option value="" ${!r.go ? 'selected' : ''}>自动</option>
-          <option value="walk" ${r.go === 'walk' ? 'selected' : ''}>步行</option>
-          <option value="taxi" ${r.go === 'taxi' ? 'selected' : ''}>打车</option>
-        </select></label>
-      </div>
-      ${rangeHTML(r, false)}
-      <div class="acts">
-        ${isNew ? '' : '<button type="button" class="btn-sm btn-danger grow" data-act="del">删除</button>'}
-        ${isNew ? '' : '<button type="button" class="btn-sm btn-ghost" data-act="cancel">取消</button>'}
-        <button type="button" class="btn-sm btn-primary" data-act="save">${isNew ? '录入' : '保存'}</button>
-      </div>
-    </div>`;
-}
+/* ---------- 全部餐厅（只读） ---------- */
 function renderLib(){
   $('#libCount').textContent = `· ${S.restaurants.length} 家`;
   $('#totalCount').textContent = S.restaurants.length;
-  $('#lib').innerHTML = cardHTML(NEW) + S.restaurants.map(cardHTML).join('');
-  document.querySelectorAll('#lib .card').forEach(bindRange);
-}
-function readCard(card){
-  const v = f => card.querySelector(`[data-f="${f}"]`).value.trim();
-  return {
-    name: v('name'),
-    tags: [...card.querySelectorAll('[data-cat].on')].map(b => b.dataset.cat),
-    price: v('price') === '' ? '' : Math.max(0, Math.round(+v('price'))),
-    dist: v('dist') === '' ? '' : Math.max(0, Math.round(+v('dist') * 1000)),
-    go: v('go'),
-    min: +card.querySelector('.lo').value,
-    max: +card.querySelector('.hi').value,
-  };
+  const far = r => r.dist === '' || r.dist == null ? Infinity : r.dist;
+  const list = [...S.restaurants].sort((a, b) => far(a) - far(b));
+  $('#lib').innerHTML = list.map(r => `
+    <li>
+      <div class="nm">${esc(r.name)}</div>
+      <div class="meta">
+        <span class="pill ppl">${rangeText(r)}</span>
+        ${r.price ? `<span class="pill num">人均 ¥${r.price}</span>` : ''}
+        ${tripText(r) ? `<span class="pill go-${goOf(r)}">${tripText(r)}</span>` : ''}
+        ${r.tags.map(t => `<span class="pill">${esc(t)}</span>`).join('')}
+      </div>
+    </li>`).join('');
 }
 function refreshAll(){ renderTags(); renderCover(); renderResult(false); renderWeek(); renderLib(); }
-
-$('#lib').addEventListener('click', e => {
-  const cat = e.target.closest('[data-cat]');
-  if (cat){ const on = cat.classList.toggle('on'); cat.setAttribute('aria-pressed', on); return; }
-  const b = e.target.closest('[data-act]'); if (!b) return;
-  const card = b.closest('.card'), id = card.dataset.id, act = b.dataset.act;
-  if (act === 'edit'){ editingId = id; renderLib(); card.parentNode && $(`#name-${id}`)?.focus(); return; }
-  if (act === 'cancel'){ editingId = null; renderLib(); return; }
-  if (act === 'del'){
-    if (b.dataset.confirm){
-      S.restaurants = S.restaurants.filter(r => r.id !== id);
-      S.week.forEach(d => { if (d.rid === id){ d.rid = null; d.locked = false; } });
-      editingId = null; save(); refreshAll(); toast('已删除'); return;
-    }
-    b.dataset.confirm = '1'; b.textContent = '再点一次确认删除'; return;
-  }
-  if (act === 'save'){
-    const data = readCard(card);
-    if (!data.name){ toast('先填餐厅名字'); card.querySelector('[data-f="name"]').focus(); return; }
-    if (id === 'new'){ S.restaurants.unshift({ id: uid(), ...data }); toast(`已录入「${data.name}」`); }
-    else { const r = byId(id); Object.assign(r, data); editingId = null; toast('已保存'); }
-    save(); refreshAll();
-  }
-});
-
-/* ---------- 重置 ---------- */
-$('#resetBtn').addEventListener('click', () => { $('#resetConfirm').hidden = false; });
-$('#resetNo').addEventListener('click', () => { $('#resetConfirm').hidden = true; });
-$('#resetYes').addEventListener('click', () => {
-  S = seed(); editingId = null; ask.tags.clear(); ask.pickId = null;
-  $('#resetConfirm').hidden = true; save(); refreshAll(); pick(); toast('已恢复默认餐厅');
-});
 
 /* ---------- 底部 TAB ---------- */
 function showTab(name){
