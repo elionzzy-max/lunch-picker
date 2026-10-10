@@ -83,6 +83,8 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
 .pick.spin .name{animation:flick .45s ease}
 @keyframes flick{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:none}}
 .pill{font-size:12px;padding:2px 8px;border-radius:6px;background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.pill.go-walk{color:var(--accent);background:var(--accent-soft);border-color:transparent}
+.pill.go-taxi{color:var(--ink);background:var(--mark-soft);border-color:transparent}
 .pill.ppl{color:var(--accent);border-color:var(--accent);font-family:var(--f-num)}
 .others{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;min-width:0}
 .others ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column}
@@ -239,22 +241,32 @@ const MAXP = 10;
 const DAYS = ['周一','周二','周三','周四','周五'];
 
 const uid = () => Math.random().toString(36).slice(2, 9);
-// 真实收藏的餐厅：人均待补，人数范围是估的，可在餐厅库里编辑
-const BUILTIN_VER = 2;
-// v：这家是第几批加进来的；老用户升级时只补新批次，避免把他删掉的店又加回来
+// 收藏的餐厅。人数范围是估的；价格、距离来自大众点评截图，可在餐厅库里编辑
+// dist 单位米；go 为 walk / taxi，不填时按距离推算
+const BUILTIN_VER = 3;
+const WALK_MAX = 1500; // 1.5km 以内默认步行
+// v：这家是第几批加进来的；pv：价格/距离是第几批补的。老用户升级时只补新批次，避免把他删掉的店又加回来
 function builtins(){
-  const B = (v, name, tags, min, max) => ({ id: uid(), name, tags, min, max, price: '', v });
+  const B = (v, name, tags, min, max, price = '', dist = '', pv = 0) => ({ id: uid(), name, tags, min, max, price, dist, go: '', v, pv: pv || (price !== '' || dist !== '' ? v : 0) });
   return [
-    B(1, '颂合锦餐厅', ['特色菜'], 2, 10),
     B(1, '拾久（朝阳公园店）', ['烤鸭','京菜'], 2, 8),
     B(1, '疆爱巴扎', ['新疆菜'], 2, 10),
-    B(1, '礁集·院里海·胶东味', ['鲁菜','海鲜'], 2, 10),
+    B(1, '礁集·院里海·胶东味', ['鲁菜','海鲜'], 2, 10, 141, 639, 3),
     B(2, 'FUTAITA贰板·烧鸟·鳗鱼饭·乌冬面', ['日料','烧鸟'], 1, 4),
     B(2, '阿光鲜烫牛肉', ['潮汕菜','火锅'], 2, 6),
     B(2, '清水亭湖北菜', ['湖北菜'], 2, 8),
     B(2, '广条友·生料市集打邊爐', ['打边炉','火锅'], 2, 8),
     B(2, '陈记虾爆鳝面馆（大山子店）', ['面馆'], 1, 4),
-    B(2, '印度餐厅泰姬楼 The Taj Pavilion', ['印度菜'], 2, 8),
+    B(2, '印度餐厅泰姬楼 The Taj Pavilion', ['印度菜'], 2, 8, 109, 355, 3),
+    B(3, '云后头·贵州菜（北京首店）', ['贵州菜'], 2, 8, 90, 2800),
+    B(3, '寶山饭店&酒馆', ['川菜'], 2, 8, 119, 2900),
+    B(3, '笨三海鲜·脆皮乳鸽·烧烤夜宵（北京旗舰店）', ['烤串','海鲜'], 2, 10, 71, 1100),
+    B(3, '日出拉面（望京店）', ['日式面条'], 1, 3, 59, 1300),
+    B(3, '慢走（亮马桥店）', ['日料','鳗鱼饭'], 1, 4, 197, 2900),
+    B(3, '万红路羊汤烧饼店', ['小吃'], 1, 4, 34, 1100),
+    B(3, 'OUR Bakery（751店）', ['面包蛋糕'], 1, 4, 73, 1600),
+    B(3, 'Laksa Queen叻沙娘娘', ['东南亚菜'], 1, 6, 83, 2300),
+    B(3, '英姐小食店（望京店）', ['快餐简餐'], 1, 4, 60, 2600),
   ];
 }
 function seed(){
@@ -275,10 +287,23 @@ if (S.restaurants.some(r => r.sample)){
   S.week.forEach(d => { if (gone.has(d.rid)){ d.rid = null; d.locked = false; } });
   save();
 }
-// 老用户：把新加的收藏餐厅补进去（同名的不重复加）
+// 老用户：补进新批次的餐厅；已有的同名餐厅只补空着的价格和距离，不覆盖他改过的
 if ((S.builtinVer || 0) < BUILTIN_VER){
-  const have = new Set(S.restaurants.map(r => r.name));
-  S.restaurants.push(...builtins().filter(r => r.v > (S.builtinVer || 0) && !have.has(r.name)));
+  const old = S.builtinVer || 0;
+  // 第 3 批时移除的收藏餐厅
+  if (old < 3){
+    const gone = new Set(S.restaurants.filter(r => r.name === '颂合锦餐厅').map(r => r.id));
+    S.restaurants = S.restaurants.filter(r => !gone.has(r.id));
+    S.week.forEach(d => { if (gone.has(d.rid)){ d.rid = null; d.locked = false; } });
+  }
+  for (const b of builtins()){
+    const r = S.restaurants.find(x => x.name === b.name);
+    if (!r){ if (b.v > old) S.restaurants.push(b); continue; }
+    if (b.pv > old){
+      if ((r.price ?? '') === '' && b.price !== '') r.price = b.price;
+      if ((r.dist ?? '') === '' && b.dist !== '') r.dist = b.dist;
+    }
+  }
   S.builtinVer = BUILTIN_VER; save();
 }
 let ask = { people: 2, tags: new Set(), pickId: null, q: '' };
@@ -290,6 +315,11 @@ const byId = id => S.restaurants.find(r => r.id === id);
 const fits = (r, n) => n >= r.min && n <= r.max;
 const pctOf = v => (v - 1) / (MAXP - 1) * 100;
 const rangeText = r => r.min === r.max ? `${r.min} 人` : `${r.min}–${r.max} 人`;
+const distText = m => m === '' || m == null ? '' : m < 1000 ? `${m}m` : `${+(m / 1000).toFixed(1)}km`;
+const goOf = r => r.go || (r.dist === '' || r.dist == null ? '' : r.dist <= WALK_MAX ? 'walk' : 'taxi');
+const GO = { walk: '步行', taxi: '打车' };
+// 步行约 80m/分钟；打车只给距离
+const tripText = r => { const g = goOf(r); if (!g) return ''; return g === 'walk' ? `${distText(r.dist)} · 步行约 ${Math.max(1, Math.round(r.dist / 80))} 分钟` : `${distText(r.dist)} · 打车`; };
 const rand = arr => arr[Math.floor(Math.random() * arr.length)];
 
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 1600); }
@@ -344,6 +374,7 @@ function renderResult(animate){
         <div class="meta">
           <span class="pill ppl">适合 ${rangeText(p)}</span>
           ${p.price ? `<span class="pill num">人均 ¥${p.price}</span>` : ''}
+          ${tripText(p) ? `<span class="pill go-${goOf(p)}">${tripText(p)}</span>` : ''}
           ${p.tags.map(t => `<span class="pill">${esc(t)}</span>`).join('')}
         </div>
         <div class="acts">
@@ -354,7 +385,7 @@ function renderResult(animate){
       </div>
       <div class="others">
         <div class="label">同样适合 ${n} 人的还有 <span class="num">${others.length}</span> 家</div>
-        ${others.length ? `<ul>${others.map(r => `<li data-pick="${r.id}"><span class="nm">${esc(r.name)}</span><span class="num" style="color:var(--muted);font-size:12px;white-space:nowrap">${rangeText(r)}${r.price ? ' · ¥' + r.price : ''}</span></li>`).join('')}</ul>` : `<p class="sub" style="font-size:13px">只有这一家，可以多录入几家。</p>`}
+        ${others.length ? `<ul>${others.map(r => `<li data-pick="${r.id}"><span class="nm">${esc(r.name)}</span><span class="num" style="color:var(--muted);font-size:12px;white-space:nowrap">${rangeText(r)}${r.price ? ' · ¥' + r.price : ''}${goOf(r) ? ' · ' + distText(r.dist) + GO[goOf(r)] : ''}</span></li>`).join('')}</ul>` : `<p class="sub" style="font-size:13px">只有这一家，可以多录入几家。</p>`}
       </div>
     </div>`;
 }
@@ -488,7 +519,7 @@ function bindRange(root){
 }
 
 /* ---------- 餐厅库 ---------- */
-const NEW = { id: 'new', name: '', tags: [], min: 1, max: 4, price: '' };
+const NEW = { id: 'new', name: '', tags: [], min: 1, max: 4, price: '', dist: '', go: '' };
 function cardHTML(r){
   const editing = editingId === r.id || r.id === 'new';
   if (!editing){
@@ -500,6 +531,7 @@ function cardHTML(r){
         </div>
         <div class="row">
           ${r.price ? `<span class="pill num">人均 ¥${r.price}</span>` : ''}
+          ${tripText(r) ? `<span class="pill go-${goOf(r)}">${tripText(r)}</span>` : ''}
           ${r.tags.map(t => `<span class="pill">${esc(t)}</span>`).join('')}
         </div>
         ${rangeHTML(r, true)}
@@ -513,6 +545,14 @@ function cardHTML(r){
       <div class="fields2">
         <label class="field"><span class="label">口味（逗号分隔）</span><input type="text" id="tags-${r.id}" data-f="tags" value="${esc(r.tags.join('，'))}" placeholder="川菜，下饭"></label>
         <label class="field"><span class="label">人均 ¥</span><input type="number" id="price-${r.id}" data-f="price" min="0" value="${r.price ?? ''}" placeholder="50"></label>
+      </div>
+      <div class="fields2">
+        <label class="field"><span class="label">距离 km</span><input type="number" id="dist-${r.id}" data-f="dist" min="0" step="0.1" value="${r.dist === '' || r.dist == null ? '' : +(r.dist / 1000).toFixed(2)}" placeholder="1.2"></label>
+        <label class="field"><span class="label">怎么去</span><select id="go-${r.id}" data-f="go">
+          <option value="" ${!r.go ? 'selected' : ''}>按距离自动（1.5km 内步行）</option>
+          <option value="walk" ${r.go === 'walk' ? 'selected' : ''}>步行</option>
+          <option value="taxi" ${r.go === 'taxi' ? 'selected' : ''}>打车</option>
+        </select></label>
       </div>
       ${rangeHTML(r, false)}
       <div class="acts">
@@ -533,6 +573,8 @@ function readCard(card){
     name: v('name'),
     tags: v('tags').split(/[,，、\s]+/).filter(Boolean),
     price: v('price') === '' ? '' : Math.max(0, Math.round(+v('price'))),
+    dist: v('dist') === '' ? '' : Math.max(0, Math.round(+v('dist') * 1000)),
+    go: v('go'),
     min: +card.querySelector('.lo').value,
     max: +card.querySelector('.hi').value,
   };
