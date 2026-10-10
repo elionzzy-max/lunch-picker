@@ -241,7 +241,8 @@ const DAYS = ['周一','周二','周三','周四','周五'];
 const uid = () => Math.random().toString(36).slice(2, 9);
 // 收藏的餐厅。人数范围是估的；价格、距离来自大众点评截图，可在餐厅库里编辑
 // dist 单位米；go 为 walk / taxi，不填时按距离推算
-const BUILTIN_VER = 9;
+const BUILTIN_VER = 10;
+const YDG_DIST = 2000; // 颐堤港统一按 2km 打车
 // 口味只用这几个大类，不再自由填写
 const CATS = ['京菜','川菜','火锅','烧烤','海鲜','日料','地方菜','异国','小吃快餐'];
 // 旧标签 → 大类（第 6 批整理口味时用，也用于用户自己录入的店）
@@ -258,7 +259,7 @@ function builtins(){
     B(1, '礁集·院里海·胶东味', ['海鲜'], 4, 10, 141, 639, 3),
     B(2, 'FUTAITA贰板·烧鸟·鳗鱼饭·乌冬面', ['日料'], 1, 4, 87, 100, 8),
     B(2, '阿光鲜烫牛肉（丽都店）', ['火锅'], 1, 6, 71, 294, 8),
-    B(2, '清水亭湖北菜（颐堤港店）', ['地方菜'], 4, 8, 127, 1200, 8),
+    B(2, '【颐堤港】清水亭湖北菜', ['地方菜'], 4, 8, 127, YDG_DIST, 8),
     B(2, '广条友·生料市集打邊爐（酒仙桥店）', ['火锅'], 4, 10, 89, 1000, 8),
     B(2, '陈记虾爆鳝面馆（大山子店）', ['小吃快餐'], 1, 4, 52, 642, 8),
     B(2, '印度餐厅泰姬楼 The Taj Pavilion', ['异国'], 2, 8, 109, 355, 3),
@@ -284,6 +285,15 @@ function builtins(){
     B(4, 'ParkSide园景（丽都店）', ['异国'], 4, 10, 145, 633),
     B(5, '蜀龙阁·川菜·水煮鱼', ['川菜'], 4, 10, 80, 684),
     B(5, '螺某某柳州螺蛳粉（酒仙桥店）', ['小吃快餐'], 1, 3, 20, 404),
+    B(10, '【颐堤港】三清潭烧鹅', ['地方菜'], 2, 8, 165, YDG_DIST),
+    B(10, '【颐堤港】蔡澜点心·粤菜', ['地方菜'], 2, 8, 89, YDG_DIST),
+    B(10, '【颐堤港】莆田餐厅PUTIEN', ['地方菜'], 2, 10, 122, YDG_DIST),
+    B(10, '【颐堤港】青檸泰 LIME RITZY', ['异国'], 2, 8, 116, YDG_DIST),
+    B(10, '【颐堤港】Shake Shack', ['异国','小吃快餐'], 1, 4, 65, YDG_DIST),
+    B(10, '【颐堤港】雷老哥土鲫鱼下饭菜', ['地方菜'], 2, 8, 57, YDG_DIST),
+    B(10, '【颐堤港】甲丁堤岸打边炉·港式火锅', ['火锅'], 2, 10, 134, YDG_DIST),
+    B(10, '【颐堤港】小印象云南菜', ['地方菜'], 2, 8, 75, YDG_DIST),
+    B(10, '【颐堤港】三公潮汕鲜牛肉火锅', ['火锅'], 2, 8, 80, YDG_DIST),
   ];
 }
 function seed(){
@@ -315,18 +325,22 @@ if ((S.builtinVer || 0) < BUILTIN_VER){
     const sj = S.restaurants.find(r => r.name === '拾久（朝阳公园店）');
     if (sj && sj.max === 8) sj.max = 10;
   }
-  // 第 3 批时移除的收藏餐厅
+  // 第 10 批：颐堤港的店统一加前缀，按 2km 打车
+  if (old < 10){
+    const r = S.restaurants.find(x => x.name === '清水亭湖北菜（颐堤港店）');
+    if (r){ r.name = '【颐堤港】清水亭湖北菜'; r.dist = YDG_DIST; r.go = 'taxi'; }
+  }
   // 第 9 批：按用户要求调整的人数范围，直接覆盖（在第 8 批改名之后执行）
   if (old < 9){
-    const fixNames = new Set(['拾久（朝阳公园店）','疆爱巴扎（丽都店）','礁集·院里海·胶东味','阿光鲜烫牛肉（丽都店）','清水亭湖北菜（颐堤港店）','广条友·生料市集打邊爐（酒仙桥店）','云后头·贵州菜（北京首店）']);
+    const fixNames = new Set(['拾久（朝阳公园店）','疆爱巴扎（丽都店）','礁集·院里海·胶东味','阿光鲜烫牛肉（丽都店）','【颐堤港】清水亭湖北菜','广条友·生料市集打邊爐（酒仙桥店）','云后头·贵州菜（北京首店）']);
     const bmap = Object.fromEntries(builtins().map(b => [b.name, b]));
-    for (const r of S.restaurants) if (fixNames.has(r.name)){ r.min = bmap[r.name].min; r.max = bmap[r.name].max; }
+    for (const r of S.restaurants) if (fixNames.has(r.name) && bmap[r.name]){ r.min = bmap[r.name].min; r.max = bmap[r.name].max; }
   }
   // 第 7 批：按用户要求调整的人数范围，直接覆盖
   if (old < 7){
     const fixNames = new Set(['寶山饭店&酒馆','笨三海鲜·脆皮乳鸽·烧烤夜宵（北京旗舰店）','日出拉面（望京店）','万红路羊汤烧饼店','OUR Bakery（751店）','Laksa Queen叻沙娘娘','英姐小食店（望京店）','一轩饺子馆（丽都店）','聚宝合南门铜锅涮肉（丽都店）','老诚一锅·炭火烧烤（将台店）','泉味道·豆米火锅·贵州菜','宋记爆肚（酒仙桥店）','鈴木食堂（丽都店）','渝乐江湖·水煮鱼','ParkSide园景（丽都店）','蜀龙阁·川菜·水煮鱼']);
     const bmap = Object.fromEntries(builtins().map(b => [b.name, b]));
-    for (const r of S.restaurants) if (fixNames.has(r.name)){ r.min = bmap[r.name].min; r.max = bmap[r.name].max; }
+    for (const r of S.restaurants) if (fixNames.has(r.name) && bmap[r.name]){ r.min = bmap[r.name].min; r.max = bmap[r.name].max; }
   }
   if (old < 6){
     const bt = Object.fromEntries(builtins().map(b => [b.name, b.tags]));
@@ -334,6 +348,7 @@ if ((S.builtinVer || 0) < BUILTIN_VER){
       r.tags = bt[r.name] ? [...bt[r.name]] : [...new Set(r.tags.map(t => CAT_MAP[t]).filter(Boolean))];
     }
   }
+  // 第 3 批时移除的收藏餐厅
   if (old < 3){
     const gone = new Set(S.restaurants.filter(r => r.name === '颂合锦餐厅').map(r => r.id));
     S.restaurants = S.restaurants.filter(r => !gone.has(r.id));
