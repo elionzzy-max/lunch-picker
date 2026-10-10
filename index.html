@@ -241,7 +241,7 @@ const DAYS = ['周一','周二','周三','周四','周五'];
 const uid = () => Math.random().toString(36).slice(2, 9);
 // 收藏的餐厅。人数范围是估的；价格、距离来自大众点评截图，可在餐厅库里编辑
 // dist 单位米；go 为 walk / taxi，不填时按距离推算
-const BUILTIN_VER = 12;
+const BUILTIN_VER = 13;
 const YDG_DIST = 2000; // 颐堤港统一按 2km 打车
 // 口味只用这几个大类，不再自由填写
 const CATS = ['京菜','川菜','火锅','烧烤','海鲜','日料','地方菜','异国','小吃快餐'];
@@ -294,9 +294,9 @@ function builtins(){
     B(10, '【颐堤港】甲丁堤岸打边炉·港式火锅', ['火锅'], 4, 8, 134, YDG_DIST),
     B(10, '【颐堤港】小印象云南菜', ['地方菜'], 4, 10, 75, YDG_DIST),
     B(10, '【颐堤港】三公潮汕鲜牛肉火锅', ['火锅'], 3, 8, 80, YDG_DIST),
-    B(11, '山河屯铁锅炖（酒仙桥店）', ['地方菜'], 3, 10, 87, 644),
-    B(11, '马艾萨·将台路牛拉', ['小吃快餐'], 1, 4, 45, 730),
-    B(11, '将台涮肉（酒仙桥店）', ['火锅','京菜'], 2, 8, 129, 758),
+    B(11, '山河屯铁锅炖（酒仙桥店）', ['地方菜'], 4, 10, 87, 644),
+    B(11, '马艾萨·将台路牛拉', ['小吃快餐'], 1, 6, 45, 730),
+    B(11, '将台涮肉（酒仙桥店）', ['火锅','京菜'], 4, 8, 129, 758),
   ];
 }
 function seed(){
@@ -332,6 +332,12 @@ if ((S.builtinVer || 0) < BUILTIN_VER){
   if (old < 10){
     const r = S.restaurants.find(x => x.name === '清水亭湖北菜（颐堤港店）');
     if (r){ r.name = '【颐堤港】清水亭湖北菜'; r.dist = YDG_DIST; r.go = 'taxi'; }
+  }
+  // 第 13 批：山河屯、马艾萨、将台涮肉按用户要求调整人数范围
+  if (old < 13){
+    const fixNames = new Set(['山河屯铁锅炖（酒仙桥店）','马艾萨·将台路牛拉','将台涮肉（酒仙桥店）']);
+    const bmap = Object.fromEntries(builtins().map(b => [b.name, b]));
+    for (const r of S.restaurants) if (fixNames.has(r.name) && bmap[r.name]){ r.min = bmap[r.name].min; r.max = bmap[r.name].max; }
   }
   // 第 12 批：颐堤港各店按用户要求调整人数范围，直接覆盖
   if (old < 12){
