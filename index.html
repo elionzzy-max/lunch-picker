@@ -174,7 +174,7 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
     </header>
     <div class="ask">
       <div>
-        <div class="label" style="margin-bottom:8px" id="coverLabel">几个人吃 · 格子里是能去的餐厅数</div>
+        <div class="label" style="margin-bottom:8px" id="coverLabel">几个人吃 · 再点一次取消 = 不限人数</div>
         <div class="cover" id="cover"></div>
       </div>
       <div>
@@ -336,7 +336,7 @@ const rand = arr => arr[Math.floor(Math.random() * arr.length)];
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 1600); }
 
 function candidates(n, tags = ask.tags){
-  return S.restaurants.filter(r => fits(r, n) && (tags.size === 0 || r.tags.some(t => tags.has(t))) && (!ask.go || goOf(r) === ask.go));
+  return S.restaurants.filter(r => (n == null || fits(r, n)) && (tags.size === 0 || r.tags.some(t => tags.has(t))) && (!ask.go || goOf(r) === ask.go));
 }
 // 当前筛选条件的文字描述，如「步行」「烤鸭、川菜口味」
 function filterDesc(){
@@ -350,7 +350,7 @@ function filterDesc(){
 function renderCover(){
   $('#cover').innerHTML = Array.from({length: MAXP}, (_, i) => {
     const n = i + 1, c = candidates(n).length;
-    return `<button type="button" data-n="${n}" class="${n === ask.people ? 'on' : ''} ${c === 0 ? 'zero' : ''}" aria-label="${n} 人，${c} 家"><span class="n">${n}</span><span class="c">${c} 家</span></button>`;
+    return `<button type="button" data-n="${n}" class="${n === ask.people ? 'on' : ''} ${c === 0 ? 'zero' : ''}" aria-pressed="${n === ask.people}" aria-label="${n} 人，${c} 家"><span class="n">${n}</span><span class="c">${c} 家</span></button>`;
   }).join('');
 }
 function allTags(){ return [...new Set(S.restaurants.flatMap(r => r.tags))]; }
@@ -358,7 +358,7 @@ function renderTags(){
   for (const t of [...ask.tags]) if (!allTags().includes(t)) ask.tags.delete(t);
   const f = filterDesc();
   $('#clearTags').hidden = !f;
-  $('#coverLabel').textContent = f ? `几个人吃 · 只算「${f}」的餐厅` : '几个人吃 · 格子里是能去的餐厅数';
+  $('#coverLabel').textContent = f ? `几个人吃 · 只算「${f}」的餐厅` : '几个人吃 · 再点一次取消 = 不限人数';
   $('#goChips').innerHTML = Object.entries(GO).map(([k, v]) => `<button type="button" class="chip ${ask.go === k ? 'on' : ''}" data-go="${k}" aria-pressed="${ask.go === k}">${v}</button>`).join('');
   $('#tagChips').innerHTML = allTags().map(t => `<button type="button" class="chip ${ask.tags.has(t) ? 'on' : ''}" data-tag="${esc(t)}">${esc(t)}</button>`).join('');
 }
@@ -370,19 +370,20 @@ function pick(){
 }
 function renderResult(animate){
   const n = ask.people, list = candidates(n), p = byId(ask.pickId);
+  const who = n == null ? '' : `适合 <b class="num">${n}</b> 人的`;
   const el = $('#result');
   if (!list.length){
     el.innerHTML = filterDesc()
-      ? `<div class="empty warn">按「${esc(filterDesc())}」筛选后，没有适合 <b class="num">${n}</b> 人的餐厅。<br><button type="button" class="btn-sm" data-clear-tags style="margin-top:8px">清除全部筛选</button></div>`
-      : `<div class="empty warn">还没有适合 <b class="num">${n}</b> 人的餐厅，去「餐厅库」录入一家，或者把某家的人数范围调大。</div>`;
+      ? `<div class="empty warn">按「${esc(filterDesc())}」筛选后，没有${who}餐厅。<br><button type="button" class="btn-sm" data-clear-tags style="margin-top:8px">清除全部筛选</button></div>`
+      : `<div class="empty warn">还没有${who}餐厅，去「餐厅库」录入一家${n == null ? '' : '，或者把某家的人数范围调大'}。</div>`;
     return;
   }
-  if (!p || !fits(p, n) || !list.includes(p)){ ask.pickId = rand(list).id; return renderResult(animate); }
+  if (!p || !list.includes(p)){ ask.pickId = rand(list).id; return renderResult(animate); }
   const others = list.filter(r => r.id !== p.id);
   el.innerHTML = `
     <div class="result">
       <div class="pick ${animate ? 'spin' : ''}">
-        <div class="q">${n} 个人吃什么？</div>
+        <div class="q">${n == null ? '今天吃什么？（不限人数）' : `${n} 个人吃什么？`}</div>
         <div class="name">${esc(p.name)}</div>
         <div class="meta">
           <span class="pill ppl">适合 ${rangeText(p)}</span>
@@ -397,7 +398,7 @@ function renderResult(animate){
         </div>
       </div>
       <div class="others">
-        <div class="label">同样适合 ${n} 人的还有 <span class="num">${others.length}</span> 家</div>
+        <div class="label">${n == null ? '其他' : `同样适合 ${n} 人的`}还有 <span class="num">${others.length}</span> 家</div>
         ${others.length ? `<ul>${others.map(r => `<li data-pick="${r.id}"><span class="nm">${esc(r.name)}</span><span class="num" style="color:var(--muted);font-size:12px;white-space:nowrap">${rangeText(r)}${r.price ? ' · ¥' + r.price : ''}${goOf(r) ? ' · ' + distText(r.dist) + GO[goOf(r)] : ''}</span></li>`).join('')}</ul>` : `<p class="sub" style="font-size:13px">只有这一家，可以多录入几家。</p>`}
       </div>
     </div>`;
@@ -405,7 +406,8 @@ function renderResult(animate){
 
 $('#cover').addEventListener('click', e => {
   const b = e.target.closest('button[data-n]'); if (!b) return;
-  ask.people = +b.dataset.n; renderCover(); pick();
+  // 再点一次已选的人数 = 不限人数
+  ask.people = ask.people === +b.dataset.n ? null : +b.dataset.n; renderCover(); pick();
 });
 $('#tagChips').addEventListener('click', e => {
   const b = e.target.closest('[data-tag]'); if (!b) return;
@@ -427,7 +429,7 @@ $('#result').addEventListener('click', e => {
   const a = e.target.closest('[data-assign]');
   if (a){
     const d = S.week[+a.dataset.assign];
-    Object.assign(d, { rid: ask.pickId, people: ask.people, locked: true });
+    Object.assign(d, { rid: ask.pickId, people: ask.people ?? d.people, locked: true });
     save(); renderWeek(); toast(`已排进${DAYS[+a.dataset.assign]}，并锁定，可在「一周」查看`);
   }
 });
