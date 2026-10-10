@@ -58,9 +58,6 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
 
 /* ---------- 提问 ---------- */
 .ask{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px}
-.ask-row{display:flex;gap:10px;flex-wrap:wrap}
-.ask-row input{flex:1 1 240px;font-size:16px;padding:11px 14px}
-.ask-row .btn-primary{padding:11px 22px;font-size:15px}
 .cover{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
 .cover button{padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.2;border-radius:8px}
 .cover .n{font-family:var(--f-num);font-weight:700;font-size:15px}
@@ -173,22 +170,18 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
   <section class="page" data-page="ask">
     <header class="page-head">
       <h1>今天吃啥</h1>
-      <p class="sub">说几个人，随机挑一家。</p>
+      <p class="sub">选几个人吃，随机挑一家。</p>
     </header>
-    <form class="ask" id="askForm">
-      <div class="ask-row">
-        <input type="text" id="askInput" placeholder="比如：3 个人吃什么？" autocomplete="off">
-        <button type="submit" class="btn-primary">帮我挑</button>
-      </div>
+    <div class="ask">
       <div>
-        <div class="label" style="margin-bottom:8px">按人数 · 每格是能接待这么多人的餐厅数</div>
+        <div class="label" style="margin-bottom:8px">几个人吃 · 格子里是能去的餐厅数</div>
         <div class="cover" id="cover"></div>
       </div>
       <div>
         <div class="label" style="margin-bottom:6px">口味筛选（不选 = 全部）</div>
         <div class="chips" id="tagChips"></div>
       </div>
-    </form>
+    </div>
     <div id="result"></div>
   </section>
 
@@ -320,7 +313,7 @@ if ((S.builtinVer || 0) < BUILTIN_VER){
   }
   S.builtinVer = BUILTIN_VER; save();
 }
-let ask = { people: 2, tags: new Set(), pickId: null, q: '' };
+let ask = { people: 2, tags: new Set(), pickId: null };
 let editingId = null;
 
 const $ = s => document.querySelector(s);
@@ -337,17 +330,6 @@ const tripText = r => { const g = goOf(r); if (!g) return ''; return g === 'walk
 const rand = arr => arr[Math.floor(Math.random() * arr.length)];
 
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 1600); }
-
-/* ---------- 问句解析：3个人 / 三个人 / 两人 / 10人 ---------- */
-const CN = {'一':1,'两':2,'二':2,'俩':2,'三':3,'仨':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10};
-function parsePeople(q){
-  let m = q.match(/(\d+)\s*(个)?\s*(人|位)?/);
-  if (m) return +m[1];
-  m = q.match(/([一两二俩三仨四五六七八九十])\s*(个)?\s*(人|位)/);
-  if (m) return CN[m[1]];
-  if (/自己|一个人|我一人|单人/.test(q)) return 1;
-  return null;
-}
 
 function candidates(n, tags = ask.tags){
   return S.restaurants.filter(r => fits(r, n) && (tags.size === 0 || r.tags.some(t => tags.has(t))));
@@ -383,7 +365,7 @@ function renderResult(animate){
   el.innerHTML = `
     <div class="result">
       <div class="pick ${animate ? 'spin' : ''}">
-        <div class="q">${esc(ask.q || `${n} 个人吃什么？`)}</div>
+        <div class="q">${n} 个人吃什么？</div>
         <div class="name">${esc(p.name)}</div>
         <div class="meta">
           <span class="pill ppl">适合 ${rangeText(p)}</span>
@@ -404,20 +386,9 @@ function renderResult(animate){
     </div>`;
 }
 
-$('#askForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const q = $('#askInput').value.trim();
-  const n = parsePeople(q);
-  if (n !== null){
-    if (n < 1 || n > MAXP){ toast(`目前只支持 1–${MAXP} 人`); return; }
-    ask.people = n;
-  }
-  ask.q = q && n !== null ? q : '';
-  renderCover(); pick();
-});
 $('#cover').addEventListener('click', e => {
   const b = e.target.closest('button[data-n]'); if (!b) return;
-  ask.people = +b.dataset.n; ask.q = ''; renderCover(); pick();
+  ask.people = +b.dataset.n; renderCover(); pick();
 });
 $('#tagChips').addEventListener('click', e => {
   const b = e.target.closest('[data-tag]'); if (!b) return;
