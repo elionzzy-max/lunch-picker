@@ -178,7 +178,11 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
         <div class="cover" id="cover"></div>
       </div>
       <div>
-        <div class="label" style="margin-bottom:6px;display:flex;gap:8px;align-items:center">口味筛选（不选 = 全部）<button type="button" class="btn-sm btn-ghost" id="clearTags" hidden>清除筛选</button></div>
+        <div class="label" style="margin-bottom:6px;display:flex;gap:8px;align-items:center">距离<button type="button" class="btn-sm btn-ghost" id="clearTags" hidden>清除全部筛选</button></div>
+        <div class="chips" id="goChips"></div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:6px">口味筛选（不选 = 全部）</div>
         <div class="chips" id="tagChips"></div>
       </div>
     </div>
@@ -313,7 +317,7 @@ if ((S.builtinVer || 0) < BUILTIN_VER){
   }
   S.builtinVer = BUILTIN_VER; save();
 }
-let ask = { people: 2, tags: new Set(), pickId: null };
+let ask = { people: 2, tags: new Set(), go: '', pickId: null };
 let editingId = null;
 
 const $ = s => document.querySelector(s);
@@ -332,7 +336,14 @@ const rand = arr => arr[Math.floor(Math.random() * arr.length)];
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 1600); }
 
 function candidates(n, tags = ask.tags){
-  return S.restaurants.filter(r => fits(r, n) && (tags.size === 0 || r.tags.some(t => tags.has(t))));
+  return S.restaurants.filter(r => fits(r, n) && (tags.size === 0 || r.tags.some(t => tags.has(t))) && (!ask.go || goOf(r) === ask.go));
+}
+// 当前筛选条件的文字描述，如「步行」「烤鸭、川菜口味」
+function filterDesc(){
+  const parts = [];
+  if (ask.go) parts.push(GO[ask.go] + '能到');
+  if (ask.tags.size) parts.push(`${[...ask.tags].join('、')}口味`);
+  return parts.join('、');
 }
 
 /* ---------- 提问区 ---------- */
@@ -345,8 +356,10 @@ function renderCover(){
 function allTags(){ return [...new Set(S.restaurants.flatMap(r => r.tags))]; }
 function renderTags(){
   for (const t of [...ask.tags]) if (!allTags().includes(t)) ask.tags.delete(t);
-  $('#clearTags').hidden = ask.tags.size === 0;
-  $('#coverLabel').textContent = ask.tags.size ? `几个人吃 · 只算「${[...ask.tags].join('、')}」口味的餐厅` : '几个人吃 · 格子里是能去的餐厅数';
+  const f = filterDesc();
+  $('#clearTags').hidden = !f;
+  $('#coverLabel').textContent = f ? `几个人吃 · 只算「${f}」的餐厅` : '几个人吃 · 格子里是能去的餐厅数';
+  $('#goChips').innerHTML = Object.entries(GO).map(([k, v]) => `<button type="button" class="chip ${ask.go === k ? 'on' : ''}" data-go="${k}" aria-pressed="${ask.go === k}">${v}</button>`).join('');
   $('#tagChips').innerHTML = allTags().map(t => `<button type="button" class="chip ${ask.tags.has(t) ? 'on' : ''}" data-tag="${esc(t)}">${esc(t)}</button>`).join('');
 }
 function pick(){
@@ -359,8 +372,8 @@ function renderResult(animate){
   const n = ask.people, list = candidates(n), p = byId(ask.pickId);
   const el = $('#result');
   if (!list.length){
-    el.innerHTML = ask.tags.size
-      ? `<div class="empty warn">你选了「${[...ask.tags].map(esc).join('、')}」，这些口味里没有适合 <b class="num">${n}</b> 人的餐厅。<br><button type="button" class="btn-sm" data-clear-tags style="margin-top:8px">清除口味筛选</button></div>`
+    el.innerHTML = filterDesc()
+      ? `<div class="empty warn">按「${esc(filterDesc())}」筛选后，没有适合 <b class="num">${n}</b> 人的餐厅。<br><button type="button" class="btn-sm" data-clear-tags style="margin-top:8px">清除全部筛选</button></div>`
       : `<div class="empty warn">还没有适合 <b class="num">${n}</b> 人的餐厅，去「餐厅库」录入一家，或者把某家的人数范围调大。</div>`;
     return;
   }
@@ -399,7 +412,12 @@ $('#tagChips').addEventListener('click', e => {
   const t = b.dataset.tag; ask.tags.has(t) ? ask.tags.delete(t) : ask.tags.add(t);
   renderTags(); renderCover(); pick();
 });
-function clearTags(){ ask.tags.clear(); renderTags(); renderCover(); pick(); }
+function clearTags(){ ask.tags.clear(); ask.go = ''; renderTags(); renderCover(); pick(); }
+$('#goChips').addEventListener('click', e => {
+  const b = e.target.closest('[data-go]'); if (!b) return;
+  ask.go = ask.go === b.dataset.go ? '' : b.dataset.go;
+  renderTags(); renderCover(); pick();
+});
 $('#clearTags').addEventListener('click', clearTags);
 $('#result').addEventListener('click', e => {
   if (e.target.closest('[data-clear-tags]')) return clearTags();
