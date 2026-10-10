@@ -549,8 +549,8 @@ function cardHTML(r){
       </div>
       <div class="fields2">
         <label class="field"><span class="label">距离 km</span><input type="number" id="dist-${r.id}" data-f="dist" min="0" step="0.1" value="${r.dist === '' || r.dist == null ? '' : +(r.dist / 1000).toFixed(2)}" placeholder="1.2"></label>
-        <label class="field"><span class="label">怎么去</span><select id="go-${r.id}" data-f="go">
-          <option value="" ${!r.go ? 'selected' : ''}>按距离自动（1.5km 内步行）</option>
+        <label class="field"><span class="label">怎么去 · 自动=1.5km 内步行</span><select id="go-${r.id}" data-f="go">
+          <option value="" ${!r.go ? 'selected' : ''}>自动</option>
           <option value="walk" ${r.go === 'walk' ? 'selected' : ''}>步行</option>
           <option value="taxi" ${r.go === 'taxi' ? 'selected' : ''}>打车</option>
         </select></label>
