@@ -82,6 +82,7 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
 .pill{font-size:12px;padding:2px 8px;border-radius:6px;background:var(--surface);color:var(--muted);border:1px solid var(--line)}
 .pill.go-walk{color:var(--accent);background:var(--accent-soft);border-color:transparent}
 .pill.go-taxi{color:var(--ink);background:var(--mark-soft);border-color:transparent}
+.pill.paid{background:var(--mark);border-color:var(--mark);color:#1B2420;font-weight:700}
 .pill.ppl{color:var(--accent);border-color:var(--accent);font-family:var(--f-num)}
 .others{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;min-width:0}
 .others ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column}
@@ -153,6 +154,10 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
         <div class="chips" id="goChips"></div>
       </div>
       <div>
+        <div class="label" style="margin-bottom:6px">充值</div>
+        <div class="chips" id="paidChips"></div>
+      </div>
+      <div>
         <div class="label" style="margin-bottom:6px">口味筛选（不选 = 全部）</div>
         <div class="chips" id="tagChips"></div>
       </div>
@@ -215,6 +220,10 @@ const CATS = ['京菜','川菜','火锅','烧烤','海鲜','日料','地方菜',
 const CAT_MAP = {烤鸭:'京菜',京菜:'京菜',新疆菜:'地方菜',鲁菜:'地方菜',湖北菜:'地方菜',贵州菜:'地方菜',东北菜:'地方菜',饺子:'地方菜',潮汕菜:'地方菜',
   粤菜:'海鲜',海鲜:'海鲜',日料:'日料',烧鸟:'日料',鳗鱼饭:'日料',日式面条:'日料',火锅:'火锅',打边炉:'火锅',川菜:'川菜',水煮鱼:'川菜',
   烤串:'烧烤',烤肉:'烧烤',印度菜:'异国',东南亚菜:'异国',西餐:'异国',面包蛋糕:'异国',面馆:'小吃快餐',小吃:'小吃快餐',快餐简餐:'小吃快餐',螺蛳粉:'小吃快餐'};
+// 已充值的店（按店名），其余都算未充值
+const PAID = new Set(['一轩饺子馆（丽都店）','礁集·院里海·胶东味']);
+const isPaid = r => PAID.has(r.name);
+const PAY = { paid: '已充值', unpaid: '未充值' };
 const WALK_MAX = 1000; // 不到 1km 默认步行，1km 及以上打车
 // v：这家是第几批加进来的；pv：价格/距离是第几批补的。老用户升级时只补新批次，避免把他删掉的店又加回来
 function builtins(){
@@ -345,7 +354,7 @@ if ((S.builtinVer || 0) < BUILTIN_VER){
   }
   S.builtinVer = BUILTIN_VER; save();
 }
-let ask = { people: 2, tags: new Set(), go: '', pickId: null };
+let ask = { people: 2, tags: new Set(), go: '', paid: '', pickId: null };
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -362,12 +371,13 @@ const rand = arr => arr[Math.floor(Math.random() * arr.length)];
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 1600); }
 
 function candidates(n, tags = ask.tags){
-  return S.restaurants.filter(r => (n == null || fits(r, n)) && (tags.size === 0 || r.tags.some(t => tags.has(t))) && (!ask.go || goOf(r) === ask.go));
+  return S.restaurants.filter(r => (n == null || fits(r, n)) && (tags.size === 0 || r.tags.some(t => tags.has(t))) && (!ask.go || goOf(r) === ask.go) && (!ask.paid || isPaid(r) === (ask.paid === 'paid')));
 }
 // 当前筛选条件的文字描述，如「步行」「烤鸭、川菜口味」
 function filterDesc(){
   const parts = [];
   if (ask.go) parts.push(GO[ask.go] + '能到');
+  if (ask.paid) parts.push(PAY[ask.paid]);
   if (ask.tags.size) parts.push(`${[...ask.tags].join('、')}口味`);
   return parts.join('、');
 }
@@ -384,6 +394,7 @@ function renderTags(){
   for (const t of [...ask.tags]) if (!allTags().includes(t)) ask.tags.delete(t);
   const f = filterDesc();
   $('#coverLabel').textContent = f ? `几个人吃 · 只算「${f}」的餐厅` : '几个人吃';
+  $('#paidChips').innerHTML = Object.entries(PAY).map(([k, v]) => `<button type="button" class="chip ${ask.paid === k ? 'on' : ''}" data-paid="${k}" aria-pressed="${ask.paid === k}">${v}</button>`).join('');
   $('#goChips').innerHTML = Object.entries(GO).map(([k, v]) => `<button type="button" class="chip ${ask.go === k ? 'on' : ''}" data-go="${k}" aria-pressed="${ask.go === k}">${v}</button>`).join('');
   $('#tagChips').innerHTML = allTags().map(t => `<button type="button" class="chip ${ask.tags.has(t) ? 'on' : ''}" data-tag="${esc(t)}">${esc(t)}</button>`).join('');
 }
@@ -411,6 +422,7 @@ function renderResult(animate){
         <div class="q">${n == null ? '今天吃什么？（不限人数）' : `${n} 个人吃什么？`}</div>
         <div class="name">${esc(p.name)}</div>
         <div class="meta">
+          ${isPaid(p) ? '<span class="pill paid">已充值</span>' : ''}
           <span class="pill ppl">适合 ${rangeText(p)}</span>
           ${p.price ? `<span class="pill num">人均 ¥${p.price}</span>` : ''}
           ${tripText(p) ? `<span class="pill go-${goOf(p)}">${tripText(p)}</span>` : ''}
@@ -439,7 +451,12 @@ $('#tagChips').addEventListener('click', e => {
   const t = b.dataset.tag; ask.tags.has(t) ? ask.tags.delete(t) : ask.tags.add(t);
   renderTags(); renderCover(); pick();
 });
-function clearTags(){ ask.tags.clear(); ask.go = ''; renderTags(); renderCover(); pick(); }
+$('#paidChips').addEventListener('click', e => {
+  const b = e.target.closest('[data-paid]'); if (!b) return;
+  ask.paid = ask.paid === b.dataset.paid ? '' : b.dataset.paid;
+  renderTags(); renderCover(); pick();
+});
+function clearTags(){ ask.tags.clear(); ask.go = ''; ask.paid = ''; renderTags(); renderCover(); pick(); }
 $('#goChips').addEventListener('click', e => {
   const b = e.target.closest('[data-go]'); if (!b) return;
   ask.go = ask.go === b.dataset.go ? '' : b.dataset.go;
@@ -535,6 +552,7 @@ function renderLib(){
     <li>
       <div class="nm">${esc(r.name)}</div>
       <div class="meta">
+        ${isPaid(r) ? '<span class="pill paid">已充值</span>' : ''}
         <span class="pill ppl">${rangeText(r)}</span>
         ${r.price ? `<span class="pill num">人均 ¥${r.price}</span>` : ''}
         ${tripText(r) ? `<span class="pill go-${goOf(r)}">${tripText(r)}</span>` : ''}
