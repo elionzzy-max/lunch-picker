@@ -174,7 +174,7 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
     </header>
     <div class="ask">
       <div>
-        <div class="label" style="margin-bottom:8px" id="coverLabel">几个人吃 · 再点一次取消 = 不限人数</div>
+        <div class="label" style="margin-bottom:8px" id="coverLabel">几个人吃</div>
         <div class="cover" id="cover"></div>
       </div>
       <div>
@@ -357,7 +357,7 @@ function allTags(){ return [...new Set(S.restaurants.flatMap(r => r.tags))]; }
 function renderTags(){
   for (const t of [...ask.tags]) if (!allTags().includes(t)) ask.tags.delete(t);
   const f = filterDesc();
-  $('#coverLabel').textContent = f ? `几个人吃 · 只算「${f}」的餐厅` : '几个人吃 · 再点一次取消 = 不限人数';
+  $('#coverLabel').textContent = f ? `几个人吃 · 只算「${f}」的餐厅` : '几个人吃';
   $('#goChips').innerHTML = Object.entries(GO).map(([k, v]) => `<button type="button" class="chip ${ask.go === k ? 'on' : ''}" data-go="${k}" aria-pressed="${ask.go === k}">${v}</button>`).join('');
   $('#tagChips').innerHTML = allTags().map(t => `<button type="button" class="chip ${ask.tags.has(t) ? 'on' : ''}" data-tag="${esc(t)}">${esc(t)}</button>`).join('');
 }
