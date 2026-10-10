@@ -240,14 +240,21 @@ const DAYS = ['周一','周二','周三','周四','周五'];
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 // 真实收藏的餐厅：人均待补，人数范围是估的，可在餐厅库里编辑
-const BUILTIN_VER = 1;
+const BUILTIN_VER = 2;
+// v：这家是第几批加进来的；老用户升级时只补新批次，避免把他删掉的店又加回来
 function builtins(){
-  const B = (name, tags, min, max) => ({ id: uid(), name, tags, min, max, price: '' });
+  const B = (v, name, tags, min, max) => ({ id: uid(), name, tags, min, max, price: '', v });
   return [
-    B('颂合锦餐厅', ['特色菜'], 2, 10),
-    B('拾久（朝阳公园店）', ['烤鸭','京菜'], 2, 8),
-    B('疆爱巴扎', ['新疆菜'], 2, 10),
-    B('礁集·院里海·胶东味', ['鲁菜','海鲜'], 2, 10),
+    B(1, '颂合锦餐厅', ['特色菜'], 2, 10),
+    B(1, '拾久（朝阳公园店）', ['烤鸭','京菜'], 2, 8),
+    B(1, '疆爱巴扎', ['新疆菜'], 2, 10),
+    B(1, '礁集·院里海·胶东味', ['鲁菜','海鲜'], 2, 10),
+    B(2, 'FUTAITA贰板·烧鸟·鳗鱼饭·乌冬面', ['日料','烧鸟'], 1, 4),
+    B(2, '阿光鲜烫牛肉', ['潮汕菜','火锅'], 2, 6),
+    B(2, '清水亭湖北菜', ['湖北菜'], 2, 8),
+    B(2, '广条友·生料市集打邊爐', ['打边炉','火锅'], 2, 8),
+    B(2, '陈记虾爆鳝面馆（大山子店）', ['面馆'], 1, 4),
+    B(2, '印度餐厅泰姬楼 The Taj Pavilion', ['印度菜'], 2, 8),
   ];
 }
 function seed(){
@@ -271,7 +278,7 @@ if (S.restaurants.some(r => r.sample)){
 // 老用户：把新加的收藏餐厅补进去（同名的不重复加）
 if ((S.builtinVer || 0) < BUILTIN_VER){
   const have = new Set(S.restaurants.map(r => r.name));
-  S.restaurants.push(...builtins().filter(r => !have.has(r.name)));
+  S.restaurants.push(...builtins().filter(r => r.v > (S.builtinVer || 0) && !have.has(r.name)));
   S.builtinVer = BUILTIN_VER; save();
 }
 let ask = { people: 2, tags: new Set(), pickId: null, q: '' };
