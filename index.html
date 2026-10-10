@@ -178,7 +178,7 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
         <div class="cover" id="cover"></div>
       </div>
       <div>
-        <div class="label" style="margin-bottom:6px;display:flex;gap:8px;align-items:center">距离<button type="button" class="btn-sm btn-ghost" id="clearTags" hidden>清除全部筛选</button></div>
+        <div class="label" style="margin-bottom:6px">距离</div>
         <div class="chips" id="goChips"></div>
       </div>
       <div>
@@ -357,7 +357,6 @@ function allTags(){ return [...new Set(S.restaurants.flatMap(r => r.tags))]; }
 function renderTags(){
   for (const t of [...ask.tags]) if (!allTags().includes(t)) ask.tags.delete(t);
   const f = filterDesc();
-  $('#clearTags').hidden = !f;
   $('#coverLabel').textContent = f ? `几个人吃 · 只算「${f}」的餐厅` : '几个人吃 · 再点一次取消 = 不限人数';
   $('#goChips').innerHTML = Object.entries(GO).map(([k, v]) => `<button type="button" class="chip ${ask.go === k ? 'on' : ''}" data-go="${k}" aria-pressed="${ask.go === k}">${v}</button>`).join('');
   $('#tagChips').innerHTML = allTags().map(t => `<button type="button" class="chip ${ask.tags.has(t) ? 'on' : ''}" data-tag="${esc(t)}">${esc(t)}</button>`).join('');
@@ -420,7 +419,6 @@ $('#goChips').addEventListener('click', e => {
   ask.go = ask.go === b.dataset.go ? '' : b.dataset.go;
   renderTags(); renderCover(); pick();
 });
-$('#clearTags').addEventListener('click', clearTags);
 $('#result').addEventListener('click', e => {
   if (e.target.closest('[data-clear-tags]')) return clearTags();
   if (e.target.closest('#reroll')) return pick();
