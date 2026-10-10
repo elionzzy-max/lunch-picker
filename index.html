@@ -249,7 +249,7 @@ const CATS = ['京菜','川菜','火锅','烧烤','海鲜','日料','地方菜',
 const CAT_MAP = {烤鸭:'京菜',京菜:'京菜',新疆菜:'地方菜',鲁菜:'地方菜',湖北菜:'地方菜',贵州菜:'地方菜',东北菜:'地方菜',饺子:'地方菜',潮汕菜:'地方菜',
   粤菜:'海鲜',海鲜:'海鲜',日料:'日料',烧鸟:'日料',鳗鱼饭:'日料',日式面条:'日料',火锅:'火锅',打边炉:'火锅',川菜:'川菜',水煮鱼:'川菜',
   烤串:'烧烤',烤肉:'烧烤',印度菜:'异国',东南亚菜:'异国',西餐:'异国',面包蛋糕:'异国',面馆:'小吃快餐',小吃:'小吃快餐',快餐简餐:'小吃快餐',螺蛳粉:'小吃快餐'};
-const WALK_MAX = 1500; // 1.5km 以内默认步行
+const WALK_MAX = 1000; // 1km 以内默认步行，超过打车
 // v：这家是第几批加进来的；pv：价格/距离是第几批补的。老用户升级时只补新批次，避免把他删掉的店又加回来
 function builtins(){
   const B = (v, name, tags, min, max, price = '', dist = '', pv = 0) => ({ id: uid(), name, tags, min, max, price, dist, go: '', v, pv: pv || (price !== '' || dist !== '' ? v : 0) });
@@ -623,7 +623,7 @@ function cardHTML(r){
       </div>
       <div class="fields2">
         <label class="field"><span class="label">距离 km</span><input type="number" id="dist-${r.id}" data-f="dist" min="0" step="0.1" value="${r.dist === '' || r.dist == null ? '' : +(r.dist / 1000).toFixed(2)}" placeholder="1.2"></label>
-        <label class="field"><span class="label">怎么去 · 自动=1.5km 内步行</span><select id="go-${r.id}" data-f="go">
+        <label class="field"><span class="label">怎么去 · 自动=1km 内步行</span><select id="go-${r.id}" data-f="go">
           <option value="" ${!r.go ? 'selected' : ''}>自动</option>
           <option value="walk" ${r.go === 'walk' ? 'selected' : ''}>步行</option>
           <option value="taxi" ${r.go === 'taxi' ? 'selected' : ''}>打车</option>
