@@ -170,7 +170,7 @@ input[type=text],input[type=number],select{font:inherit;color:var(--ink);backgro
   <section class="page" data-page="ask">
     <header class="page-head">
       <h1>今天吃啥</h1>
-      <p class="sub">选几个人吃，随机挑一家。</p>
+      <p class="sub">一共收录 <span class="num" id="totalCount">0</span> 家</p>
     </header>
     <div class="ask">
       <div>
@@ -549,6 +549,7 @@ function cardHTML(r){
 }
 function renderLib(){
   $('#libCount').textContent = `· ${S.restaurants.length} 家`;
+  $('#totalCount').textContent = S.restaurants.length;
   $('#lib').innerHTML = cardHTML(NEW) + S.restaurants.map(cardHTML).join('');
   document.querySelectorAll('#lib .card').forEach(bindRange);
 }
