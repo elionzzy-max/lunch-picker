@@ -241,43 +241,49 @@ const DAYS = ['周一','周二','周三','周四','周五'];
 const uid = () => Math.random().toString(36).slice(2, 9);
 // 收藏的餐厅。人数范围是估的；价格、距离来自大众点评截图，可在餐厅库里编辑
 // dist 单位米；go 为 walk / taxi，不填时按距离推算
-const BUILTIN_VER = 5;
+const BUILTIN_VER = 6;
+// 口味只用这几个大类，不再自由填写
+const CATS = ['京菜','川菜','火锅','烧烤','海鲜','日料','地方菜','异国','小吃快餐'];
+// 旧标签 → 大类（第 6 批整理口味时用，也用于用户自己录入的店）
+const CAT_MAP = {烤鸭:'京菜',京菜:'京菜',新疆菜:'地方菜',鲁菜:'地方菜',湖北菜:'地方菜',贵州菜:'地方菜',东北菜:'地方菜',饺子:'地方菜',潮汕菜:'地方菜',
+  粤菜:'海鲜',海鲜:'海鲜',日料:'日料',烧鸟:'日料',鳗鱼饭:'日料',日式面条:'日料',火锅:'火锅',打边炉:'火锅',川菜:'川菜',水煮鱼:'川菜',
+  烤串:'烧烤',烤肉:'烧烤',印度菜:'异国',东南亚菜:'异国',西餐:'异国',面包蛋糕:'异国',面馆:'小吃快餐',小吃:'小吃快餐',快餐简餐:'小吃快餐',螺蛳粉:'小吃快餐'};
 const WALK_MAX = 1500; // 1.5km 以内默认步行
 // v：这家是第几批加进来的；pv：价格/距离是第几批补的。老用户升级时只补新批次，避免把他删掉的店又加回来
 function builtins(){
   const B = (v, name, tags, min, max, price = '', dist = '', pv = 0) => ({ id: uid(), name, tags, min, max, price, dist, go: '', v, pv: pv || (price !== '' || dist !== '' ? v : 0) });
   return [
-    B(1, '拾久（朝阳公园店）', ['烤鸭','京菜'], 2, 8),
-    B(1, '疆爱巴扎', ['新疆菜'], 2, 10),
-    B(1, '礁集·院里海·胶东味', ['鲁菜','海鲜'], 2, 10, 141, 639, 3),
-    B(2, 'FUTAITA贰板·烧鸟·鳗鱼饭·乌冬面', ['日料','烧鸟'], 1, 4),
-    B(2, '阿光鲜烫牛肉', ['潮汕菜','火锅'], 2, 6),
-    B(2, '清水亭湖北菜', ['湖北菜'], 2, 8),
-    B(2, '广条友·生料市集打邊爐', ['打边炉','火锅'], 2, 8),
-    B(2, '陈记虾爆鳝面馆（大山子店）', ['面馆'], 1, 4),
-    B(2, '印度餐厅泰姬楼 The Taj Pavilion', ['印度菜'], 2, 8, 109, 355, 3),
-    B(3, '云后头·贵州菜（北京首店）', ['贵州菜'], 2, 8, 90, 2800),
+    B(1, '拾久（朝阳公园店）', ['京菜'], 2, 8),
+    B(1, '疆爱巴扎', ['地方菜'], 2, 10),
+    B(1, '礁集·院里海·胶东味', ['海鲜'], 2, 10, 141, 639, 3),
+    B(2, 'FUTAITA贰板·烧鸟·鳗鱼饭·乌冬面', ['日料'], 1, 4),
+    B(2, '阿光鲜烫牛肉', ['火锅'], 2, 6),
+    B(2, '清水亭湖北菜', ['地方菜'], 2, 8),
+    B(2, '广条友·生料市集打邊爐', ['火锅'], 2, 8),
+    B(2, '陈记虾爆鳝面馆（大山子店）', ['小吃快餐'], 1, 4),
+    B(2, '印度餐厅泰姬楼 The Taj Pavilion', ['异国'], 2, 8, 109, 355, 3),
+    B(3, '云后头·贵州菜（北京首店）', ['地方菜'], 2, 8, 90, 2800),
     B(3, '寶山饭店&酒馆', ['川菜'], 2, 8, 119, 2900),
-    B(3, '笨三海鲜·脆皮乳鸽·烧烤夜宵（北京旗舰店）', ['烤串','海鲜'], 2, 10, 71, 1100),
-    B(3, '日出拉面（望京店）', ['日式面条'], 1, 3, 59, 1300),
-    B(3, '慢走（亮马桥店）', ['日料','鳗鱼饭'], 1, 4, 197, 2900),
-    B(3, '万红路羊汤烧饼店', ['小吃'], 1, 4, 34, 1100),
-    B(3, 'OUR Bakery（751店）', ['面包蛋糕'], 1, 4, 73, 1600),
-    B(3, 'Laksa Queen叻沙娘娘', ['东南亚菜'], 1, 6, 83, 2300),
-    B(3, '英姐小食店（望京店）', ['快餐简餐'], 1, 4, 60, 2600),
-    B(4, '佟爷·老北京炙子烤肉（丽都店）', ['烤肉','京菜'], 2, 8, 116, 292),
-    B(4, '一轩饺子馆（丽都店）', ['东北菜','饺子'], 2, 8, 108, 328),
-    B(4, '唐宫·粤菜海鲜（丽都店）', ['粤菜','海鲜'], 2, 10, 149, 291),
+    B(3, '笨三海鲜·脆皮乳鸽·烧烤夜宵（北京旗舰店）', ['海鲜','烧烤'], 2, 10, 71, 1100),
+    B(3, '日出拉面（望京店）', ['日料'], 1, 3, 59, 1300),
+    B(3, '慢走（亮马桥店）', ['日料'], 1, 4, 197, 2900),
+    B(3, '万红路羊汤烧饼店', ['小吃快餐'], 1, 4, 34, 1100),
+    B(3, 'OUR Bakery（751店）', ['异国'], 1, 4, 73, 1600),
+    B(3, 'Laksa Queen叻沙娘娘', ['异国'], 1, 6, 83, 2300),
+    B(3, '英姐小食店（望京店）', ['小吃快餐'], 1, 4, 60, 2600),
+    B(4, '佟爷·老北京炙子烤肉（丽都店）', ['烧烤','京菜'], 2, 8, 116, 292),
+    B(4, '一轩饺子馆（丽都店）', ['地方菜'], 2, 8, 108, 328),
+    B(4, '唐宫·粤菜海鲜（丽都店）', ['海鲜'], 2, 10, 149, 291),
     B(4, '聚宝合南门铜锅涮肉（丽都店）', ['火锅','京菜'], 2, 8, 102, 367),
-    B(4, '老诚一锅·炭火烧烤（将台店）', ['火锅','烤串'], 2, 8, 85, 310),
-    B(4, '泉味道·豆米火锅·贵州菜', ['贵州菜','火锅'], 1, 6, 61, 296),
-    B(4, '宋记爆肚（酒仙桥店）', ['小吃','京菜'], 1, 4, 63, 277),
+    B(4, '老诚一锅·炭火烧烤（将台店）', ['火锅','烧烤'], 2, 8, 85, 310),
+    B(4, '泉味道·豆米火锅·贵州菜', ['火锅'], 1, 6, 61, 296),
+    B(4, '宋记爆肚（酒仙桥店）', ['京菜'], 1, 4, 63, 277),
     B(4, '鈴木食堂（丽都店）', ['日料'], 1, 4, 92, 116),
-    B(4, 'GANGES恒河正宗印度美食', ['印度菜'], 2, 6, 86, 306),
-    B(4, '渝乐江湖·水煮鱼', ['川菜','水煮鱼'], 2, 8, 135, 345),
-    B(4, 'ParkSide园景（丽都店）', ['西餐'], 1, 6, 145, 633),
-    B(5, '蜀龙阁·川菜·水煮鱼', ['川菜','水煮鱼'], 2, 8, 80, 684),
-    B(5, '螺某某柳州螺蛳粉（酒仙桥店）', ['小吃','螺蛳粉'], 1, 3, 20, 404),
+    B(4, 'GANGES恒河正宗印度美食', ['异国'], 2, 6, 86, 306),
+    B(4, '渝乐江湖·水煮鱼', ['川菜'], 2, 8, 135, 345),
+    B(4, 'ParkSide园景（丽都店）', ['异国'], 1, 6, 145, 633),
+    B(5, '蜀龙阁·川菜·水煮鱼', ['川菜'], 2, 8, 80, 684),
+    B(5, '螺某某柳州螺蛳粉（酒仙桥店）', ['小吃快餐'], 1, 3, 20, 404),
   ];
 }
 function seed(){
@@ -302,6 +308,12 @@ if (S.restaurants.some(r => r.sample)){
 if ((S.builtinVer || 0) < BUILTIN_VER){
   const old = S.builtinVer || 0;
   // 第 3 批时移除的收藏餐厅
+  if (old < 6){
+    const bt = Object.fromEntries(builtins().map(b => [b.name, b.tags]));
+    for (const r of S.restaurants){
+      r.tags = bt[r.name] ? [...bt[r.name]] : [...new Set(r.tags.map(t => CAT_MAP[t]).filter(Boolean))];
+    }
+  }
   if (old < 3){
     const gone = new Set(S.restaurants.filter(r => r.name === '颂合锦餐厅').map(r => r.id));
     S.restaurants = S.restaurants.filter(r => !gone.has(r.id));
@@ -353,7 +365,7 @@ function renderCover(){
     return `<button type="button" data-n="${n}" class="${n === ask.people ? 'on' : ''} ${c === 0 ? 'zero' : ''}" aria-pressed="${n === ask.people}" aria-label="${n} 人，${c} 家"><span class="n">${n}</span><span class="c">${c} 家</span></button>`;
   }).join('');
 }
-function allTags(){ return [...new Set(S.restaurants.flatMap(r => r.tags))]; }
+function allTags(){ const used = new Set(S.restaurants.flatMap(r => r.tags)); return CATS.filter(c => used.has(c)); }
 function renderTags(){
   for (const t of [...ask.tags]) if (!allTags().includes(t)) ask.tags.delete(t);
   const f = filterDesc();
@@ -552,9 +564,12 @@ function cardHTML(r){
     <div class="card editing ${isNew ? 'new-card' : ''}" data-id="${r.id}">
       ${isNew ? '<div class="nm" style="font-family:var(--f-display);font-weight:700;font-size:17px">录入新餐厅</div>' : ''}
       <label class="field"><span class="label">名字</span><input type="text" id="name-${r.id}" data-f="name" value="${esc(r.name)}" placeholder="比如：楼下麻辣烫"></label>
+      <div class="field"><span class="label">口味（可多选）</span>
+        <div class="chips">${CATS.map(c => `<button type="button" class="chip ${r.tags.includes(c) ? 'on' : ''}" data-cat="${c}" aria-pressed="${r.tags.includes(c)}">${c}</button>`).join('')}</div>
+      </div>
       <div class="fields2">
-        <label class="field"><span class="label">口味（逗号分隔）</span><input type="text" id="tags-${r.id}" data-f="tags" value="${esc(r.tags.join('，'))}" placeholder="川菜，下饭"></label>
         <label class="field"><span class="label">人均 ¥</span><input type="number" id="price-${r.id}" data-f="price" min="0" value="${r.price ?? ''}" placeholder="50"></label>
+        <span></span>
       </div>
       <div class="fields2">
         <label class="field"><span class="label">距离 km</span><input type="number" id="dist-${r.id}" data-f="dist" min="0" step="0.1" value="${r.dist === '' || r.dist == null ? '' : +(r.dist / 1000).toFixed(2)}" placeholder="1.2"></label>
@@ -582,7 +597,7 @@ function readCard(card){
   const v = f => card.querySelector(`[data-f="${f}"]`).value.trim();
   return {
     name: v('name'),
-    tags: v('tags').split(/[,，、\s]+/).filter(Boolean),
+    tags: [...card.querySelectorAll('[data-cat].on')].map(b => b.dataset.cat),
     price: v('price') === '' ? '' : Math.max(0, Math.round(+v('price'))),
     dist: v('dist') === '' ? '' : Math.max(0, Math.round(+v('dist') * 1000)),
     go: v('go'),
@@ -593,6 +608,8 @@ function readCard(card){
 function refreshAll(){ renderTags(); renderCover(); renderResult(false); renderWeek(); renderLib(); }
 
 $('#lib').addEventListener('click', e => {
+  const cat = e.target.closest('[data-cat]');
+  if (cat){ const on = cat.classList.toggle('on'); cat.setAttribute('aria-pressed', on); return; }
   const b = e.target.closest('[data-act]'); if (!b) return;
   const card = b.closest('.card'), id = card.dataset.id, act = b.dataset.act;
   if (act === 'edit'){ editingId = id; renderLib(); card.parentNode && $(`#name-${id}`)?.focus(); return; }
