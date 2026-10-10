@@ -212,7 +212,7 @@ const DAYS = ['周一','周二','周三','周四','周五'];
 const uid = () => Math.random().toString(36).slice(2, 9);
 // 收藏的餐厅。价格、距离来自大众点评截图；页面只读，改数据就改这里
 // dist 单位米；go 为 walk / taxi，不填时按距离推算
-const BUILTIN_VER = 21;
+const BUILTIN_VER = 22;
 const LSG_DIST = 4400; // 蓝色港湾统一按 4.4km 打车
 const YDG_DIST = 2000; // 颐堤港统一按 2km 打车
 // 口味只用这几个大类，不再自由填写
@@ -284,7 +284,7 @@ function builtins(){
     B(15, '【蓝色港湾】很久以前羊肉串', ['烧烤'], 4, 10, 91, LSG_DIST),
     B(16, '闽中闽福建菜·臻品（好运街店）', ['地方菜'], 4, 10, 180, 3000),
     B(19, '桂香黄辣丁（望京SOHO T1商场店）', ['地方菜'], 4, 10, 87, 3000),
-    B(21, '黔爷贵州酸汤牛肉火锅（望京店）', ['火锅','地方菜'], 4, 10, 89, 3000),
+    B(21, '黔爷贵州酸汤牛肉火锅（望京店）', ['火锅','地方菜'], 4, 8, 89, 3000),
   ];
 }
 function seed(){
@@ -320,6 +320,11 @@ if ((S.builtinVer || 0) < BUILTIN_VER){
   if (old < 10){
     const r = S.restaurants.find(x => x.name === '清水亭湖北菜（颐堤港店）');
     if (r){ r.name = '【颐堤港】清水亭湖北菜'; r.dist = YDG_DIST; r.go = 'taxi'; }
+  }
+  // 第 22 批：黔爷改 4–8 人
+  if (old < 22){
+    const r = S.restaurants.find(x => x.name === '黔爷贵州酸汤牛肉火锅（望京店）');
+    if (r){ r.min = 4; r.max = 8; }
   }
   // 第 20 批：桂香黄辣丁改 4–10 人
   if (old < 20){
